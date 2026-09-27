@@ -14,13 +14,13 @@ The final design consists of:
 
 ## Final PCB
 
-The final PCB file in this repository is approximately **97 mm × 67 mm** based on its Edge.Cuts geometry.
+The final PCB file in this repository is approximately **97 mm × 67 mm**.
 
 The project uses through-hole components including the MCU, 7-segment displays, BC547 transistor stages, resistors, capacitors, crystal, regulator, switches, buzzer, and battery connector.
 
 ## Revision files
 
-The numbered revisions are retained as design-history snapshots. See `PCB\_DESIGN\_HISTORY.md` for the inferred evolution.
+The numbered revisions are retained as design-history snapshots. See `PCB\_DESIGN\_HISTORY.md` for the evolution details.
 
 ## Fabrication
 
