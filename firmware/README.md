@@ -2,11 +2,6 @@
 
 The firmware is a bare-metal 8051 assembly implementation for the Nuvoton W78E052DDG.
 
-## Files
-
-* `digclock.asm` — annotated version prepared for GitHub. The instruction flow is retained, with constants and comments added for readability.
-* `archive/digclock\\\_original.asm` — original source preserved as supplied, including the original comments/formatting.
-
 ## Main functions
 
 `MAIN`
