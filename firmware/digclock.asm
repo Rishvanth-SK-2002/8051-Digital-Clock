@@ -1,7 +1,6 @@
-;===============================================================================
-; Digital Clock + Alarm
-; Target MCU : Nuvoton W78E052DDG (8051-compatible core)
-; Clock      : 11.0592 MHz crystal (project assumes conventional 12T timing)
+; Project Name : 8051 Digital Clock with Alarm
+; Target MCU   : Nuvoton W78E052DDG (8051-compatible core)
+; Clock        : 11.0592 MHz crystal (project assumes conventional 12T timing)
 ;
 ; Firmware organization
 ;   0000H : Reset vector -> MAIN
@@ -25,12 +24,9 @@
 ;     in 12T mode this is about 4.4846 ms. 223 overflows are used as the
 ;     software one-second base (nominally about 1.000064 s before accounting
 ;     for instruction/interrupt overhead).
-;
-; This file is a commented/annotated version of the original program. The
-; program flow and instruction-level behavior are intentionally retained.
-;===============================================================================
+;   * Display digits format -  H1 H2 : M1 M2 : S1 S2 - R5 R4 : R3 R2 : R1 R0. 
 
-;----------------------------- Constants / aliases -----------------------------
+; Aliases
 DIGIT       EQU P0          ; Shared 8-bit segment-data bus.
 TRAN1       EQU P2.7        ; Digit-select output 1.
 TRAN2       EQU P2.6        ; Digit-select output 2.
@@ -39,14 +35,16 @@ TRAN4       EQU P2.4        ; Digit-select output 4.
 TRAN5       EQU P2.3        ; Digit-select output 5.
 TRAN6       EQU P2.2        ; Digit-select output 6.
 
-LEFT        EQU P1.0        ; UI button: move selection left (active low).
-RIGHT       EQU P1.1        ; UI button: move selection right (active low).
+LEFT        EQU P1.0        ; UI button: move selection left.
+RIGHT       EQU P1.1        ; UI button: move selection right.
 UP          EQU P1.2        ; UI button: change selected value upward.
 DOWN        EQU P1.3        ; UI button: change selected value downward.
 BUZZER      EQU P1.4        ; Alarm buzzer output.
 MODE        EQU P3.2        ; MODE button; also INT0 on the 8051.
-ALARM       EQU P2.0        ; Select alarm-setting mode (active low).
-TIMESET     EQU P2.1        ; Select time-setting mode (active low).
+ALARM       EQU P2.0        ; Select alarm-setting mode.
+TIMESET     EQU P2.1        ; Select time-setting mode.
+
+; LEFT, RIGHT, UP, DOWN, ALARM and TIMESET buttons are configured as active low inputs.
 
 CLOCK_BASE          EQU 00H  ; Six-byte live clock field: 00H-05H.
 ALARM_BASE          EQU 31H  ; Six-byte alarm field: 31H-36H.
@@ -58,9 +56,7 @@ TIMER_COUNTS        EQU 4133 ; 10000H - EFDBH.
 TICKS_PER_SECOND    EQU 223  ; Software count of Timer0 overflows per second.
 NUM_DIGITS          EQU 6    ; Six multiplexed 7-segment digits.
 
-;===============================================================================
 ; Reset and interrupt vectors
-;===============================================================================
 ORG 0000H
     LJMP MAIN               ; Reset enters the application at MAIN.
 
@@ -72,17 +68,13 @@ ORG 000BH
     CLR TR0                 ; Stop the timer before the ISR reloads it.
     LJMP ISRT0              ; Timer0 overflow handler entry point.
 
-;===============================================================================
 ; Main initialization and normal operation
-;===============================================================================
 ORG 30H
 MAIN:
     MOV SP, #STACK_START    ; Move stack away from the default register area.
 
-    ;--------------------------------------------------------------------------
     ; Initial state/reference values used by the mode-setting UI.
     ; Values 10-19 correspond to the second group of lookup-table patterns.
-    ;--------------------------------------------------------------------------
     MOV 45H, #19
     MOV 46H, #15
     MOV 47H, #19
@@ -96,11 +88,9 @@ MAIN:
     MOV IE, #83H            ; EA=1, ET0=1, EX0=1: enable global, T0 and INT0.
     MOV DPTR, #BITPATTERN   ; Base address for 7-segment code lookup.
 
-    ;--------------------------------------------------------------------------
     ; Six live clock/display state bytes held in Register Bank 0 (R0-R5).
     ; The special values 10-19 select the marker/separator form of the digit.
-    ;--------------------------------------------------------------------------
-    MOV R0, #2
+    MOV R0, #2              ; Default starting time of the clock when reset.
     MOV R1, #5
     MOV R2, #19
     MOV R3, #5
@@ -112,61 +102,58 @@ MAIN:
     MOV TL0, #TIMER_RELOAD_L
     SETB TR0                ; Start Timer0.
 
-;===============================================================================
 ; ENDLESS: display multiplexing + alarm check
-;===============================================================================
 ENDLESS:
-    ;-------------------------------------------------------------------------
-    ; Refresh digit 1.
     ; Each digit shares P0. The software loads its segment pattern, enables
     ; one digit-select transistor, then disables it before moving on.
-    ;-------------------------------------------------------------------------
+    ; This is done in rapid succession to create the illusion of all the
+    ; digits being visible at the same time to a human's naked eye.
+
+    ; Refresh Digit 1
     MOV A, R0
     MOVC A, @A+DPTR         ; A = BITPATTERN[R0] from code memory.
     MOV DIGIT, A            ; Put segment pattern on P0.
     SETB TRAN1              ; Enable digit 1.
     CLR TRAN1               ; Disable digit 1.
 
-    ; Digit 2.
+    ; Refresh Digit 2
     MOV A, R1
     MOVC A, @A+DPTR
     MOV DIGIT, A
     SETB TRAN2
     CLR TRAN2
 
-    ; Digit 3.
+    ; Refresh Digit 3
     MOV A, R2
     MOVC A, @A+DPTR
     MOV DIGIT, A
     SETB TRAN3
     CLR TRAN3
 
-    ; Digit 4.
+    ; Refresh Digit 4
     MOV A, R3
     MOVC A, @A+DPTR
     MOV DIGIT, A
     SETB TRAN4
     CLR TRAN4
 
-    ; Digit 5.
+    ; Refresh Digit 5
     MOV A, R4
     MOVC A, @A+DPTR
     MOV DIGIT, A
     SETB TRAN5
     CLR TRAN5
 
-    ; Digit 6.
+    ; Refresh Digit 6
     MOV A, R5
     MOVC A, @A+DPTR
     MOV DIGIT, A
     SETB TRAN6
     CLR TRAN6
 
-    ;-------------------------------------------------------------------------
     ; Alarm comparison.
     ; Switch to Register Bank 1 so R0/R1/R5 can be used as pointers/loop
     ; control without overwriting the six live display values in Bank 0.
-    ;-------------------------------------------------------------------------
     SETB PSW.3              ; RS1=0, RS0=1 -> Register Bank 1.
     MOV R5, #NUM_DIGITS
     MOV R0, #CLOCK_BASE     ; Pointer to live time: 00H-05H.
@@ -182,7 +169,7 @@ CONTINUE:
 
     ; All six values matched: sound the alarm for a software delay interval.
     SETB BUZZER
-    MOV R4, #70
+    MOV R4, #70 ; Buzzers is ON for about 5 seconds.
 LOOP3:
     MOV R3, #255
 LOOP2:
@@ -197,10 +184,7 @@ EXITCHECK:
     CLR PSW.3               ; Return to Register Bank 0.
     LJMP ENDLESS            ; Continue normal display refreshing.
 
-;===============================================================================
 ; Timer0 interrupt service routine: timekeeping
-;===============================================================================
-ORG 0B0H
 ISRT0:
     ; Reload immediately so the next timer interval starts from the same base.
     MOV TH0, #TIMER_RELOAD_H
@@ -214,37 +198,31 @@ ISRT0:
     CLR PSW.3
     CLR PSW.4
 
-    ;--------------------------------------------------------------------------
     ; R6 counts Timer0 overflows. 223 overflows form the software one-second
     ; base. Until then, return through the common interrupt-exit code.
-    ;--------------------------------------------------------------------------
     INC R6
     CJNE R6, #TICKS_PER_SECOND, ENDISR1
     MOV R6, #0
 
-    ;--------------------------------------------------------------------------
     ; Seconds units: R0 = 0..9
-    ;--------------------------------------------------------------------------
     INC R0
-    CJNE R0, #10, ENDISR1
+    CJNE R0, #10, ENDISR1 ; Reload Digit 1 to 0 if it is 9 currently, or else increase the time by 1 second.
     MOV R0, #0
 
     ; Seconds tens: R1 = 0..5
     INC R1
-    CJNE R1, #6, ENDISR1
+    CJNE R1, #6, ENDISR1 ; Reload Digit 2 to 0 if it is 5 currently, or else increase the time by 10 seconds.
     MOV R1, #0
 
-    ;--------------------------------------------------------------------------
     ; Minutes units: R2 uses the 10..19 lookup-table range so the marker/
     ; separator state is preserved on this position.
-    ;--------------------------------------------------------------------------
     INC R2
-    CJNE R2, #20, ENDISR1
+    CJNE R2, #20, ENDISR1 ; Reload Digit 3 to 0 if it is 9 currently, or else increase the time by 1 minutes.
     MOV R2, #10
 
     ; Minutes tens: R3 = 0..5
     INC R3
-    CJNE R3, #6, ENDISR1
+    CJNE R3, #6, ENDISR1 ; Reload Digit 4 to 0 if it is 5 currently, or else increase the time by 10 minutes.
     MOV R3, #0
 
     ;--------------------------------------------------------------------------
@@ -291,9 +269,7 @@ NPSW3:
 ENDGAME:
     RETI                    ; Return from interrupt.
 
-;===============================================================================
 ; MODESELECT: choose between time-setting and alarm-setting
-;===============================================================================
 ORG 100H
 MODESELECT:
     ; Save the interrupted PSW. This routine uses Register Bank 2.
@@ -311,7 +287,7 @@ MODESELECT:
 
 AGAIN:
     ; ALARM is active low.
-    JB ALARM, NEXT4
+    JB ALARM, NEXT4 ; Check if ALARM button is pressed
     LCALL DEBOUNCE
 
     ; Copy the six live clock bytes into the alarm edit buffer.
@@ -332,55 +308,53 @@ TRANSFER:
 
 NEXT4:
     ; TIMESET is active low.
-    JB TIMESET, AGAIN
+    JB TIMESET, AGAIN ; Check if TIMESET button is pressed
     LCALL DEBOUNCE
     MOV R0, #CLOCK_BASE
     MOV R1, #CLOCK_BASE
     LJMP SETMODE
 
-;===============================================================================
 ; SETMODE: six-digit editor
-;
+
 ; R0 = currently selected/editing RAM location.
 ; R1 = base pointer used for display refresh and position tracking.
-;
-; LEFT/RIGHT move the selection circularly through six positions.
-; UP/DOWN alter the selected value while preserving the design's encoded
+
+; LEFT/RIGHT move the selection circularly through six digit positions.
+; UP/DOWN alter the selected digit's value while preserving the design's encoded
 ; separator/marker conventions.
 ; MODE exits the editor.
-;===============================================================================
 SETMODE:
-    ; Normalize the working representation around the initially selected digit.
-    MOV R5, #-10
+    ; Normalize the working representation around the initially selected digit,
+    ; that is, remove the separator dots used in H2 and M2 displays in the
+    ; running time display and instead use the dot as a cursor / marker.
+    MOV R5, #-10 ; Remove M2 digit's dot
     MOV R4, #2
     LCALL RADDX              ; R0 += R4
     LCALL ADDX               ; @R0 += R5
 
-    MOV R4, #2
+    MOV R4, #2 ; Remove H2 digit's dot
     LCALL RADDX              ; R0 += 2
     LCALL ADDX               ; @R0 -= 10
 
-    MOV R5, #10
+    MOV R5, #10 ; Add dot to the original digit position (S2 digit)
     MOV R4, #-4
     LCALL RADDX              ; R0 -= 4
     LCALL ADDX               ; @R0 += 10
 
 CHECK:
-    ;-------------------------------------------------------------------------
     ; LEFT: move selected position rightward in this memory ordering. The
     ; original UI treats the six positions as a circular list and moves the
     ; separator/marker state together with the selection.
-    ;-------------------------------------------------------------------------
-    JB LEFT, NEXT0
+    JB LEFT, NEXT0 ; Check if LEFT button is pressed
     LCALL DEBOUNCE
 
     MOV A, R1
     ADD A, #5
     MOV B, A
     MOV A, R0
-    CJNE A, B, NORM0
+    CJNE A, B, NORM0 ; Check if current digit is H1
 
-    ; Wrap at the far end.
+    ; If current digit is H1, then move the cursor to S2.
     MOV R5, #-10
     LCALL ADDX
     MOV R4, #-5
@@ -397,17 +371,15 @@ NORM0:
     LCALL ADDX
 
 NEXT0:
-    ;-------------------------------------------------------------------------
     ; RIGHT: move selection in the opposite direction, with circular wrap.
-    ;-------------------------------------------------------------------------
-    JB RIGHT, NEXT1
+    JB RIGHT, NEXT1 ; Check if RIGHT button is pressed
     LCALL DEBOUNCE
 
     MOV B, R1
     MOV A, R0
-    CJNE A, B, NORM1
+    CJNE A, B, NORM1 ; Check if current digit is S2
 
-    ; Wrap from the first position to the last position.
+    ; If current digit is S2, then move the cursor to H1 digit.
     MOV R5, #-10
     LCALL ADDX
     MOV R4, #5
@@ -424,14 +396,12 @@ NORM1:
     LCALL ADDX
 
 NEXT1:
-    ;-------------------------------------------------------------------------
     ; UP: normally subtract one from the encoded value. The special value 10
     ; triggers a search through the 45H-4AH reference table to obtain the
     ; position-appropriate encoded state.
-    ;-------------------------------------------------------------------------
-    JB UP, NEXT2
+    JB UP, NEXT2 ; Check if UP button is pressed
     LCALL DEBOUNCE
-    CJNE @R0, #10, NORM2
+    CJNE @R0, #10, NORM2 ; Check if current digit's value is a dotted 0.
 
     MOV B, R1
     PUSH B                  ; Save current display/base pointer.
@@ -440,8 +410,8 @@ NEXT1:
     MOV R1, #DISPLAY_REF_BASE
 
 SOMENAME:
-    CJNE A, B, NDIGIT
-    MOV A, @R1
+    CJNE A, B, NDIGIT ; Check which digit the cursor points to currently.
+    MOV A, @R1 ; Transfer the digit's appropriate last value to the display
     MOV @R0, A
     POP B
     MOV R1, B
@@ -457,12 +427,10 @@ NORM2:
     LCALL ADDX
 
 NEXT2:
-    ;-------------------------------------------------------------------------
     ; DOWN: search for the position's reference value. If found, set the
     ; selected location to the special zero/marker state (10). Otherwise,
     ; increment the value by one.
-    ;-------------------------------------------------------------------------
-    JB DOWN, NEXT3
+    JB DOWN, NEXT3 ; Check if DOWN button is pressed
     LCALL DEBOUNCE
 
     MOV B, R1
@@ -473,8 +441,8 @@ NEXT2:
 
 SOMENAME2:
     MOV A, @R1
-    CJNE A, B, NDIGIT2
-    MOV @R0, #10
+    CJNE A, B, NDIGIT2 ; Check if the digit is in its last value
+    MOV @R0, #10 ; Move the first value if the digit appropriate last value is met.
     POP B
     MOV R1, B
     SJMP NEXT3
@@ -490,16 +458,14 @@ NDIGIT2:
 
 NEXT3:
     ; MODE exits the editor. Otherwise refresh all six digits and continue.
-    JB MODE, STOPC
+    JB MODE, STOPC ; Check if MODE button is pressed
     LCALL DEBOUNCE
     LJMP TERMINATE
 
 STOPC:
-    ;-------------------------------------------------------------------------
     ; While SETMODE owns the CPU, it must perform display refresh itself.
     ; Sweep six positions exactly as ENDLESS does in normal operation.
-    ;-------------------------------------------------------------------------
-    MOV A, @R1
+    MOV A, @R1 ; R1 is for now the display pointer
     MOVC A, @A+DPTR
     MOV DIGIT, A
     SETB TRAN1
@@ -546,9 +512,7 @@ STOPC:
     MOV R1, A
     LJMP CHECK
 
-;===============================================================================
 ; TERMINATE: finish editing and restore normal clock operation
-;===============================================================================
 TERMINATE:
     ; Remove the special separator/marker offset from the selected value.
     MOV R5, #-10
@@ -559,7 +523,7 @@ TERMINATE:
     CJNE R0, #30H, COMPARE
 COMPARE:
     JC LESSER               ; R0 < 30H -> use the live clock field.
-    MOV R0, #31H            ; Otherwise use the alarm field.
+    MOV R0, #ALARM_BASE            ; Otherwise use the alarm field.
     SJMP ENDIT
 
 LESSER:
@@ -587,34 +551,28 @@ ENDIT:
     SETB TR0
     LJMP ENDISR
 
-;===============================================================================
-; Helper: RADDX
+; Helper: RADDX - Used during the mode setting ISR to change the digit position
 ; R0 <- R0 + R4
-;===============================================================================
 RADDX:
     MOV A, R0
     ADD A, R4
     MOV R0, A
     RET
 
-;===============================================================================
-; Helper: ADDX
+; Helper: ADDX - Used during the mode settig ISR to change a digit's value
 ; @R0 <- @R0 + R5
 ; Negative values are used as two's-complement immediates to perform subtraction
 ; using the 8051 ADD instruction.
-;===============================================================================
 ADDX:
     MOV A, @R0
     ADD A, R5
     MOV @R0, A
     RET
 
-;===============================================================================
 ; Helper: DEBOUNCE
-; Crude software delay used after button events so mechanical contacts have
+; Software delay used after button events so mechanical contacts have
 ; time to settle before the next input check.
-;===============================================================================
-DEBOUNCE:
+DEBOUNCE: ; kills about 70 ms of time
     MOV R2, #255
 LOOP5:
     MOV R3, #255
@@ -623,13 +581,11 @@ LOOP4:
     DJNZ R2, LOOP5
     RET
 
-;===============================================================================
 ; Seven-segment lookup table
 ;
 ; 0-9  : standard digit patterns
 ; 10-19: same digit patterns with bit 7 asserted (80H offset), used by the
 ;        original design for the separator/marker state.
-;===============================================================================
 ORG 250H
 BITPATTERN:
     DB 3FH, 06H, 5BH, 4FH, 66H, 6DH, 7DH, 07H, 7FH, 6FH
