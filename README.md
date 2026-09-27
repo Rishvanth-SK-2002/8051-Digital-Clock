@@ -1,4 +1,4 @@
-# 8051 Digital Clock & Alarm
+<img width="2448" height="3264" alt="20220314_191802" src="https://github.com/user-attachments/assets/081acf9b-c861-4e0c-8766-332ecf70f025" /># 8051 Digital Clock with Alarm
 
 A bare-metal digital clock and alarm project built around the Nuvoton **W78E052DDG**, an 8051-compatible microcontroller. The project combines firmware, a custom two-layer through-hole PCB, display multiplexing, push-button UI, an audible alarm, and multiple PCB revisions.
 
@@ -21,10 +21,10 @@ A bare-metal digital clock and alarm project built around the Nuvoton **W78E052D
 ```text
 .
 ├── firmware/
-│   ├── digclock.asm                 # Annotated portfolio version
+│   ├── digclock.asm
+│   ├── MEMORY_MAP.md
+│   ├── FIRMWARE_ARCHITECTURE.md
 │   ├── README.md
-│   └── archive/
-│       └── digclock_original.asm    # Original source preserved unchanged
 ├── hardware/
 │   ├── schematic/
 │   │   ├── digclock.kicad_sch
@@ -46,14 +46,11 @@ A bare-metal digital clock and alarm project built around the Nuvoton **W78E052D
 │   │       └── v4/
 │   ├── README.md
 │   └── PCB_DESIGN_HISTORY.md
-├── docs/
-│   ├── FIRMWARE_ARCHITECTURE.md
-│   ├── MEMORY_MAP.md
-│   ├── GITHUB_UPLOAD_GUIDE.md
-│   └── DESIGN_NOTES.md
 ├── media/
-│   └── README.md
-└── .gitignore
+│   └── Digclock_Enclosed.jpg
+│   ├── Digclock_PCBA.jpg
+│   ├── Digclock_PCB_Unassembled.jpg
+│   └── Digclock_Breadboard.jpg
 ```
 
 ## Firmware architecture
@@ -110,32 +107,20 @@ The revision `.kicad_pcb` files are retained as historical snapshots and do not 
 
 ## Important schematic note
 
-The archived KiCad schematic contains an imported MCU symbol whose **library ID is `MCU:PIC16F877A-I_P` while the value field is `W78E052DDG`**. This appears to be an artifact of the original symbol/import workflow. The repository intentionally preserves the original design files rather than rewriting their historical content.
+For ease of schematic development and unavailability of the actual IC's symbol, an imported symbol of PIC MCU was used.
 
 Before using the schematic as the starting point for a new design, verify the MCU pin mapping against the **W78E052DDG datasheet** and the final PCB routing.
 
 ## Photos / project presentation
 
-The `media/` directory is reserved for:
+Photos of the stage-by-stage progression of this project are uploaded for reference as mentioned below.
 
-1. bare PCB photographs,
-2. assembled PCB photographs,
-3. enclosed product photographs, and
-4. optional PCB renders/screenshots.
+1. System wired using a breadboard.
+2. PCB fabricated using the final version design but unassembled
+3. Components Assembled PCB
+4. Assembled PCB enclosed in a 3D-printed Enclosure.
 
-The 3D-printed enclosure was designed by a collaborator; the repository should credit that contribution separately rather than representing the enclosure as the author's PCB design.
-
-## Quick start for GitHub
-
-The fastest way to publish this project is to upload the repository root as-is. The detailed command-line procedure is in `docs/GITHUB_UPLOAD_GUIDE.md`.
-
-For a portfolio reviewer, start with:
-
-1. `README.md` — project overview and architecture
-2. `firmware/digclock.asm` — annotated embedded implementation
-3. `hardware/pcb/final/digclock.kicad_pcb` — final board source
-4. `hardware/PCB_DESIGN_HISTORY.md` — PCB revision story
-5. `media/` — add your photographs here
+The 3D-printed enclosure was designed by a collaborator.
 
 ## Engineering context
 
@@ -152,4 +137,4 @@ The firmware is intentionally retained at the assembly level so the implementati
 
 ## License
 
-No license is asserted by this repository yet. Add a license before accepting external contributions or permitting reuse.
+No license is asserted by this repository yet.
