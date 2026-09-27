@@ -1,8 +1,8 @@
 # PCB Design History
 
-The repository contains several layouts because this was the first PCB design and the board went through multiple physical revisions.
+The repository contains several layouts because this was my first PCB design and the board went through multiple physical revisions.
 
-The electrical component inventory is essentially consistent across the numbered layouts, so the revisions appear to focus primarily on placement, routing, board dimensions, and mechanical refinement rather than a fundamental circuit redesign.
+The electrical component inventory is the same across all the versions as the revisions focus primarily on placement, routing, board dimensions, and mechanical refinement rather than fundamental circuit redesigns.
 
 ## Revision dimensions and routing density
 
@@ -14,28 +14,27 @@ The electrical component inventory is essentially consistent across the numbered
 | V4 | 102 × 70 mm | 497 | Further placement/mechanical refinement |
 | Final | 97 × 67 mm | 470 | Compact final layout with mounting-hole refinement |
 
-\* Segment counts are derived from the KiCad PCB files and are included as an objective file-level comparison, not as a measure of PCB quality.
+\* Routed segment counts are included as an objective file-level comparison, not as a measure of PCB quality.
 
-## Inferred development story
+## Development story
 
 ### V1
 
-The first board is substantially larger than the later designs. The component inventory is already close to the eventual product architecture, suggesting this was primarily a first physical implementation of the working circuit.
+This was the first physical implementation of the working circuit, ensuring the component placements and fully traced layouts, but with no regard to spacing constraints. Trace width was about 10 mils.
 
 ### V2
 
-The board area drops by roughly half relative to V1. The component placement is more compact and the PCB contains a fully routed layout. This is consistent with an optimization pass focused on reducing board size while retaining the same circuit.
+This was a try at achieving a more compact form factor than the first version, decreasing the trace widths to 7.84 mils, placing the components closer and routing with the traces and pads dangerously close to each other.
 
 ### V3
 
-The board is wider than V2, but the file contains only 41 routed segments. That strongly suggests an intermediate placement/routing experiment rather than a final manufacturing candidate.
+This version is an incomplete one. Continued and completed in version 4.
 
 ### V4
 
-The board returns to a more compact form and includes a more deliberate mechanical arrangement. The historical file also includes mounting-hole geometry, indicating that physical integration was becoming an explicit design constraint.
+Trace widths increased to 20 mils due to a locally available manufacturer's constraints then. Mounting holes were added before finalizing the enclosure design.
 
 ### Final
 
-The final board is approximately 97 × 67 mm and includes mounting holes. Its placement/routing characteristics are close to the compact V2 family rather than the wider V4 arrangement, which is consistent with returning to a favorable earlier placement strategy and then making final mechanical/routing refinements.
+The final board is approximately 97 × 67 mm and comes back to 7.84 mil traces. It is very similar to version 2 but with mounting holes and few other minor refinements in the tracing.
 
-These interpretations are intentionally marked as **inferences from the supplied CAD files**. The exact reason for each revision should ultimately be described using the designer's own notes/photos when available.
