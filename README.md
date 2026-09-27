@@ -1,4 +1,4 @@
-<img width="2448" height="3264" alt="20220314_191802" src="https://github.com/user-attachments/assets/081acf9b-c861-4e0c-8766-332ecf70f025" /># 8051 Digital Clock with Alarm
+# 8051 Digital Clock with Alarm
 
 A bare-metal digital clock and alarm project built around the Nuvoton **W78E052DDG**, an 8051-compatible microcontroller. The project combines firmware, a custom two-layer through-hole PCB, display multiplexing, push-button UI, an audible alarm, and multiple PCB revisions.
 
